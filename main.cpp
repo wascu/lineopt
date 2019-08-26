@@ -7,6 +7,7 @@
 #include "include/TCallback.h"
 
 #include "include/TDelegate.h"
+#include "include/RMap.h"
 //#include "include/aws.h"
 
 #include <string>
@@ -1238,6 +1239,9 @@ void test6_7(){
     Vector2d p2(x2,y2);
     Vector2d p3(x3,y3);
 
+    Dfun tdfun(1.0,2.0,v1_,v2_);
+    tdfun.setOriPos(v3_);
+    double dd1 = tdfun.dp0_x();
 
 
 
