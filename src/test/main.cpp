@@ -4,13 +4,14 @@
 #include <eigen3/Eigen/Core>
 #include <LBFGS.h>
 
-#include "include/TCallback.h"
+#include "test/TCallback.h"
 
-#include "include/TDelegate.h"
-#include "include/RMap.h"
+#include "test/TDelegate.h"
+#include "../../include/test11/Jfunc.h"
 //#include "include/aws.h"
 
 #include <string>
+#include <cmath>
 
 
 using namespace Eigen;
@@ -1239,11 +1240,6 @@ void test6_7(){
     Vector2d p2(x2,y2);
     Vector2d p3(x3,y3);
 
-    Dfun tdfun(1.0,2.0,v1_,v2_);
-    tdfun.setOriPos(v3_);
-    double dd1 = tdfun.dp0_x();
-
-
 
     double w = 60;
     double h = 60;
@@ -1310,11 +1306,236 @@ void test6_7(){
 }
 
 void test6_8(){
+//    double x1 =1254;
+//    double x2 =1362.5;
+//    double x3 =1199;
+//    double x4 =1421;
+//
+//    double y1 =330.6;
+//    double y2 =328.5;
+//    double y3 =403;
+//    double y4 =401;
 
+
+//    double x1_ =100;
+//    double x2_ =200;
+//    double x3_ =150;
+//    double x4_ =0.34;
+//
+//    double y1_ =200;
+//    double y2_ =400;
+//    double y3_ =700;
+//    double y4_ =0.3;
+
+    double x1 =249;
+    double x2 =238;
+    double x3 =461;
+    double x4 =1421;
+
+    double y1 =700-352;
+    double y2 =700-425;
+    double y3 =700-424;
+    double y4 =401;
+
+    double x1_ =-50;
+    double x2_ =-50;
+    double x3_ =70;
+    double x4_ =0.34;
+
+    double y1_ =50;
+    double y2_ =-50;
+    double y3_ =-50;
+    double y4_ =0.3;
+
+    double z1_ =1;
+    double z2_ =1;
+    double z3_ =1;
+    double z4_ =1;
+
+    //(x1,y1)    (x2,y2) (x3,y3) (x4,y4)
+    //(1254,330.6),(1362.5,328.5),(1199,403),(1421,401)
+    //(0.1,0.1,1),(0.34,0.1,1),(0.1,0.3,1),(0.34,0.3,1)
+    Vector3d v1(100,200,1);
+    Vector3d v2(200,400,1);
+    Vector3d v3(150,700,1);
+
+    Vector3d v1_(x1_,y1_,z1_);
+    Vector3d v2_(x2_,y2_,z2_);
+    Vector3d v3_(x3_,y3_,z3_);
+
+    Vector2d p1(x1,y1);
+    Vector2d p2(x2,y2);
+    Vector2d p3(x3,y3);
+
+
+
+    double k11 =0;
+    double k12 =0;
+    double k13 = 0;
+    double k14 = 0;
+    k11 = v1_.squaredNorm();
+    k12 = v2_.squaredNorm();
+    k13 = -2*v1_.dot(v2_);
+    k14 = (p1-p2).squaredNorm();//模长的平方
+
+    double k21 = 0;
+    double k22 =0;
+    double k23 = 0;
+    double k24 = 0;
+    k21 = v2_.squaredNorm();
+    k22 = v3_.squaredNorm();
+    k23 = -2*v2_.dot(v3_);
+    k24 = (p3-p2).squaredNorm();//模长的平方
+
+    double k31 =0;
+    double k32 = 0;
+    double k33 = 0;
+    double k34 = 0;
+    k31 = v1_.squaredNorm();
+    k32 = v3_.squaredNorm();
+    k33 = -2*v1_.dot(v3_);
+    k34 = (p1-p3).squaredNorm();//模长的平方
+
+    ////////////////////////////////////////////////////////////////////////////////////
+    MatrixXd k_mat(3,4);
+    k_mat<<k11,k12,k13,k14,
+            k21,k22,k23,k24,
+            k31,k32,k33,k34;
+    test8_lbfgs_t(k_mat);
+    ///////////////////////////////////////////////////////////////////////////////////
+    //验证
+    Eigen::Vector3d v_x={0.641743, 0.823504 , 2.39353};
+    Eigen::Vector3d vx1 = v1*v_x[0];
+    Eigen::Vector3d vx2 = v2*v_x[1];
+    Eigen::Vector3d vx3 = v3*v_x[2];
+
+    Eigen::Vector3d vx12 = vx1 - vx2;
+    Eigen::Vector3d vx23 = vx3 - vx2;
+    Eigen::Vector3d vx13 = vx1 - vx3;
+    std::cout<<"vx12 length is:"<<vx12.norm()<<std::endl;
+    std::cout<<"vx23 length is:"<<vx23.norm()<<std::endl;
+    std::cout<<"vx13 length is:"<<vx13.norm()<<std::endl;
+
+    std::cout<<"k14 length is:"<<sqrt(k14)<<std::endl;
+    std::cout<<"k24 length is:"<<sqrt(k24)<<std::endl;
+    std::cout<<"k34 length is:"<<sqrt(k34)<<std::endl;
 }
 
 void test6(){}
 
+typedef Eigen::Vector3d Geo3d;
+typedef Eigen::Vector4d Geo4d;
+typedef Eigen::Matrix4d GeoMat4d;
+
+
+Eigen::Vector3d remapPoint(Eigen::Vector3d& pos,Eigen::Matrix4d& compMat) {
+    Eigen::Vector4d vec4d(pos[0],pos[1],pos[2],1);
+    vec4d = compMat*vec4d;
+    return vec4d.head<3>();
+}
+
+void test_9(){
+    /**
+     * 1. 构建测试数据
+     * 1.1 构建测试用的旋转矩阵，平移矩阵，缩放矩阵
+     * 1.2 根据1.1将一个三角形顶点信息经过矩阵映射(缩放、旋转、平移)得到新的三角形边长数据
+     * 2. 根据前后的三角形信息恢复矩阵变换
+     *
+     * */
+
+
+
+    double rx = M_PI/2;
+    double ry = M_PI/5;
+    double rz = M_PI/3;
+
+
+    double scale = 2;
+    Vector3d p_a (0,0,0);
+    Vector3d p_b (4,0,0);
+    Vector3d p_c (4,3,0);
+    Vector3d p_d (0,3,0);
+    Vector4d p_test (4,5,0,1);
+
+    /**************************************************************************/
+
+    Eigen::Matrix4d rotateMat,scaleMat,offsetMat,compMat;
+
+    Eigen::Vector3d offsetVec(30,12,15);
+    offsetMat.setIdentity();
+    offsetMat.block<3,1>(0,3) = offsetVec;
+
+    scaleMat.setIdentity();
+    scaleMat*=scale;
+    scaleMat(3,3) = 1;
+
+    Eigen::AngleAxisd::QuaternionType quat = Eigen::AngleAxisd(rz,Geo3d::UnitZ())
+            *Eigen::AngleAxisd(ry,Geo3d::UnitY())
+            *Eigen::AngleAxisd(rx,Geo3d::UnitX());
+    auto rotMat = quat.matrix();
+    rotateMat.setIdentity();
+    rotateMat.block<3,3>(0,0) = rotMat;
+
+    compMat = offsetMat*rotateMat*scaleMat;
+
+
+    Vector3d p_A = remapPoint(p_a,compMat);
+    Vector3d p_B = remapPoint(p_b,compMat);
+    Vector3d p_C = remapPoint(p_c,compMat);
+    Vector3d p_D = remapPoint(p_d,compMat);
+
+    std::cout<<"the p_A-p_D is:\n"<<p_A<<std::endl<<std::endl
+            <<p_B<<std::endl<<std::endl
+            <<p_C<<std::endl<<std::endl
+            <<p_D<<std::endl<<std::endl;
+
+
+
+
+    Vector3d v_AB = p_B-p_A;
+    Vector3d v_AC = p_C-p_A;
+    Vector3d v_AD = p_D-p_A;
+    Vector3d v_BC = p_C-p_B;
+    Vector3d v_BD = p_D-p_B;
+    Vector3d v_CD = p_D-p_C;
+    double l_AB = v_AB.norm();
+    double l_AC = v_AC.norm();
+    double l_AD = v_AD.norm();
+    double l_BC = v_BC.norm();
+    double l_BD = v_BD.norm();
+    double l_CD = v_CD.norm();
+
+    std::cout<<"the length is:\n"<<l_AB<<std::endl<<std::endl
+             <<l_AC<<std::endl<<std::endl
+             <<l_AD<<std::endl<<std::endl
+             <<l_BC<<std::endl<<std::endl
+             <<l_BD<<std::endl<<std::endl
+             <<l_CD<<std::endl<<std::endl;
+
+    Vector3d pro_A = p_A/p_A[2];
+    Vector3d pro_B = p_B/p_B[2];
+    Vector3d pro_C = p_C/p_C[2];
+    Vector3d pro_D = p_D/p_D[2];
+
+    std::cout<<"the pro_A-pro_D is:\n"<<pro_A<<std::endl<<std::endl
+             <<pro_B<<std::endl<<std::endl
+             <<pro_C<<std::endl<<std::endl
+             <<pro_D<<std::endl<<std::endl;
+
+
+
+    std::cout<<"the compMat is:\n"<<compMat<<std::endl;
+    std::cout<<"the compMat*p_test is:\n"<<compMat*p_test<<std::endl;
+
+    std::cout<<"the rotateMat4 is:\n"<<rotateMat<<std::endl;
+
+
+    Vector3d pc_ = rotMat*p_c;
+
+    std::cout<<pc_<<std::endl;
+
+    std::cout<<rotMat<<std::endl;
+}
 
 
 void test7(){
@@ -1482,6 +1703,38 @@ private:
     }
 };
 
+
+
+
+
+
+
+
+
+
+/**
+ * 近截面z=-1;
+ * 近截面显示投影映射的点（P1,P2,P3...）
+ * 约束：已知近截面的P1等坐标，和目标点T1等 点间距
+ * 目标：求目标点T1的坐标
+ *
+ * S1*P1 = T1
+ *
+ * （L12为T1、T2的点间距 ...）
+ * f12 = (S1*P1_x -S2*P2_x)² +(S1*P1_y -S2*P2_y)² +(S1*P1_z -S2*P2_z)² - L12² = 0;
+ * f13 = (S1*P1_x -S3*P3_x)² +(S1*P1_y -S3*P3_y)² +(S1*P3_z -S2*P3_z)² - L13² = 0;
+ *
+ * J(S1,S2,S3...) = f12² + f13²+ f14²+...+
+ *                         f23²+ f24²+...+
+ *                               f34²+...+
+ *                               ... = 0
+ *
+ *
+ * */
+class mrBrock{
+
+};
+
 void test8_lbfgs_t(Eigen::MatrixXd& k_mat){
     const int n = 3;
     LBFGSParam<double> param;
@@ -1544,6 +1797,11 @@ void testDelegate(){
     d3(1,2); //调用委托，将输出3.5
 }
 
+
+
+
+
+
 int main() {
 //    test0();
 //    std::cout<<"\nbegin 0_0:"<<std::endl;
@@ -1553,7 +1811,9 @@ int main() {
 
 //    test4();
 //    test5();
-    test6_7();
+    test_9();
+//    test10();
+//    test6_8();
 //    testDelegate();
     std::cout << "Hello, World!" << std::endl;
     return 0;

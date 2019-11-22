@@ -1,20 +1,11 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 2.8)
 project(EigenSample)
-
+#set(THIRD_PARTY_LIB /home/wasku/Code/cppCode/thirdPartyLibrary)
+set(THIRD_PARTY_LIB ~/Code/cppCode/thirdPartyLibrary)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/out)
 set(CMAKE_CXX_STANDARD 11)
 
 
-
-#
-#find_package(EIGEN REQUIRED)
-#message(STATUS "EIGEN included at ${EIGEN3_INCLUDE_DIR}")
-
-
-set(THIRD_PARTY_LIB /home/wasku/Code/cppCode/thirdPartyLibrary)
-set(LBFGS_PACKAGE ${THIRD_PARTY_LIB}/LBFGSpp)
-set(LBFGS_INCLUDE ${LBFGS_PACKAGE}/include)
-
-include_directories(${LBFGS_INCLUDE})
-
-add_executable(EigenSample main.cpp src/TCallback.cpp include/TCallback.h)
-
+#add_subdirectory(src/test)
+add_subdirectory(src/test11)
+#add_subdirectory(src/test12)
