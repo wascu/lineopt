@@ -53,7 +53,7 @@ double Jfunc::operator()(const VectorXd &x, VectorXd &grad) {
     }
     grad[nVars-2] = 0;
     grad[nVars-1] = 0;
-//    std::cout<<"the current error is: "<<error<<std::endl;
+    std::cout<<"the current error is: "<<error<<std::endl;
     return error;
 }
 

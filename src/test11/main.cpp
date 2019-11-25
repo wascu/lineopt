@@ -275,12 +275,124 @@ void test10_1(){
     std::cout<<"end of test10_1...\n";
 }
 
+
+void test10_2(){
+    //calibrate front camera
+
+    //left
+    /*
+       485.0  458.0       1
+       324.5  460.5       0
+       521.7  400.7       3
+       583.9  400.7       2
+       */
+
+    //right
+    /*
+
+       */
+    //camera intrinsic params
+    /**
+     * fx
+     * fy
+     * cx
+     * cy
+     * */
+    double fx = 275.99891086;
+    double fy = 275.84623357;
+    double cx = 653.15865904;
+    double cy = 397.58424851;
+
+
+    Eigen::Matrix3d camIntrinsicParams;
+    camIntrinsicParams = Matrix3d::Identity();
+    camIntrinsicParams(0,0) = fx;
+    camIntrinsicParams(1,1) = fy;
+    camIntrinsicParams(0,2) = cx;
+    camIntrinsicParams(1,2) = cy;
+
+    Eigen::Matrix3d matInverse = camIntrinsicParams.inverse();
+
+
+    std::vector<LinePairData> vecLPdata;
+    std::vector<Vector2d> points;
+//    points.emplace_back(2,0.8);
+//    points.emplace_back(3.22752,1.70961);
+//    points.emplace_back(2.30992,1.36348);
+//    points.emplace_back(1.59984,0.758242);
+//
+//    for(int i=0;i<points.size();++i){
+//        points[i] *=1.000019;
+//    }
+
+    std::vector<Vector3d> pixelPoints;
+    pixelPoints.emplace_back(324.5,800 - 460.5,1);
+    pixelPoints.emplace_back(485.0,800 - 458.0,1);
+//    pixelPoints.emplace_back(583.9,800 - 400.7,1);
+//    pixelPoints.emplace_back(521.7,800 - 400.7,1);
+    pixelPoints.emplace_back(521,800 - 436,1);
+//    pixelPoints.emplace_back(400,800 - 437,1);
+
+    Vector3d tmpVec3;
+    for(int i =0;i<pixelPoints.size();++i){
+        tmpVec3 = matInverse*pixelPoints[i];
+        cout<<"the index is: "<<i<<" ,the tmpVec3 is:\n"<<tmpVec3.head(2)<<endl;
+        points.push_back(tmpVec3.head(2));
+    }
+
+
+    std::vector<double> vec_distances;
+    double width = 300;
+    double height = 50;
+    double l_diag = sqrt(height*height+width*width);
+    vec_distances.push_back(width);
+    vec_distances.push_back(l_diag);
+//    vec_distances.push_back(height);
+    vec_distances.push_back(height);
+//    vec_distances.push_back(l_diag);
+//    vec_distances.push_back(width);
+
+    int tmp = 0;
+    for(int i=0;i<pixelPoints.size();++i){
+        for(int j=i+1;j<pixelPoints.size();++j){
+            LinePairData linePairData{};
+            linePairData.nIndex1 = i;
+            linePairData.nIndex2 =j;
+            linePairData.distance = vec_distances[tmp++];
+            vecLPdata.push_back(linePairData);
+        }
+    }
+
+
+/********************************************************************/
+
+    Jfunc jfunc(points,vecLPdata);
+    const int n = 5;
+    LBFGSParam<double> param;
+    LBFGSSolver<double> solver(param);
+
+    VectorXd x = VectorXd::Zero(n);
+    x[0]=1;
+    x[1]=2;
+    x[2]=5;
+//    x[3]=20;
+    x[3]=0;
+    x[4]=0;
+    double fcx;
+    int niter = solver.minimize(jfunc, x, fcx);
+
+    std::cout << niter << " iterations" << std::endl;
+    std::cout << "x = \n" << x.transpose() << std::endl;
+    std::cout << "f(x) = " << fcx << std::endl;
+    std::cout<<"end of test10_2...\n";
+}
+
 int main(){
-    test_9();
-    cout<<"begin test10...\n";
-    test10();
-    cout<<"begin test10_1...\n";
-    test10_1();
+//    test_9();
+//    cout<<"begin test10...\n";
+//    test10();
+    cout<<"begin test10_2...\n";
+    test10_2();
     cout<<"end...\n";
     return 0;
 }
